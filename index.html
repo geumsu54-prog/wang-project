@@ -2,116 +2,49 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Wang Project - 디테일 한옥 산사</title>
-    <style>body { margin: 0; background-color: #87CEEB; overflow: hidden; }</style>
+    <title>Wang Project - 3D 전통 기와집</title>
+    <style>body { margin: 0; background-color: #cae5ff; overflow: hidden; }</style>
 </head>
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
     <script>
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xcae5ff); // 하늘색
-        
+        scene.background = new THREE.Color(0xcae5ff);
+
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // 조명
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // 조명 설정
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         scene.add(ambientLight);
-        
-        const sun = new THREE.DirectionalLight(0xfff5e6, 1.2);
-        sun.position.set(10, 20, 10);
-        sun.castShadow = true;
-        scene.add(sun);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        sunLight.position.set(10, 20, 10);
+        scene.add(sunLight);
 
-        const hanokGroup = new THREE.Group();
+        // 마우스 컨트롤
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-        // 1. 기단 (돌 축대)
-        const baseGeo = new THREE.BoxGeometry(7, 0.6, 5);
-        const baseMat = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.8 });
-        const base = new THREE.Mesh(baseGeo, baseMat);
-        base.position.y = -0.3;
-        base.receiveShadow = true;
-        hanokGroup.add(base);
-
-        // 2. 기둥 6개 (목재)
-        const pillarGeo = new THREE.CylinderGeometry(0.12, 0.14, 2, 16);
-        const woodMat = new THREE.MeshStandardMaterial({ color: 0x6e3b12, roughness: 0.6 });
-        
-        const pillarPositions = [
-            [-2.8, 1, -1.8], [0, 1, -1.8], [2.8, 1, -1.8],
-            [-2.8, 1,  1.8], [0, 1,  1.8], [2.8, 1,  1.8]
-        ];
-        
-        pillarPositions.forEach(pos => {
-            const pillar = new THREE.Mesh(pillarGeo, woodMat);
-            pillar.position.set(...pos);
-            pillar.castShadow = true;
-            hanokGroup.add(pillar);
+        // 3D 모델 불러오기 (올리신 island-glb.glb 파일 연결)
+        const loader = new THREE.GLTFLoader();
+        loader.load('island-glb.glb', function (gltf) {
+            const hanok = gltf.scene;
+            scene.add(hanok);
+            
+            // 카메라 위치 잡기
+            camera.position.set(10, 5, 10);
+            controls.update();
+        }, undefined, function (error) {
+            console.error('3D 모델 로딩 실패:', error);
         });
 
-        // 3. 벽체 및 창호문 (창살 느낌)
-        const wallGeo = new THREE.BoxGeometry(5.4, 1.8, 3.4);
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0xf5f2eb }); // 흙벽색
-        const wall = new THREE.Mesh(wallGeo, wallMat);
-        wall.position.y = 0.9;
-        hanokGroup.add(wall);
-
-        // 문틀 표현
-        const doorGeo = new THREE.BoxGeometry(1.2, 1.4, 3.45);
-        const doorMat = new THREE.MeshStandardMaterial({ color: 0x4a2608 });
-        const door = new THREE.Mesh(doorGeo, doorMat);
-        door.position.y = 0.8;
-        hanokGroup.add(door);
-
-        // 4. 서까래 / 대들보
-        const beamGeo = new THREE.BoxGeometry(6.2, 0.25, 4.2);
-        const beam = new THREE.Mesh(beamGeo, woodMat);
-        beam.position.y = 1.95;
-        hanokGroup.add(beam);
-
-        // 5. 기와 지붕 (처마 들림 및 기와 결 표현)
-        const roofGroup = new THREE.Group();
-        
-        // 지붕 하단 (넓은 처마)
-        const roofBottomGeo = new THREE.ConeGeometry(4.8, 1.2, 4);
-        const giwaMat = new THREE.MeshStandardMaterial({ color: 0x2c3539, roughness: 0.4 }); // 어두운 암회색 기와
-        const roofBottom = new THREE.Mesh(roofBottomGeo, giwaMat);
-        roofBottom.position.y = 2.6;
-        roofBottom.rotation.y = Math.PI / 4;
-        roofBottom.scale.set(1.4, 0.8, 1.1);
-        roofGroup.add(roofBottom);
-
-        // 용마루 (지붕 맨 위 날카로운 능선)
-        const ridgeGeo = new THREE.BoxGeometry(4.2, 0.2, 0.3);
-        const ridgeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
-        const ridge = new THREE.Mesh(ridgeGeo, ridgeMat);
-        ridge.position.y = 3.1;
-        roofGroup.add(ridge);
-
-        hanokGroup.add(roofGroup);
-
-        // 6. 잔디 마당
-        const groundGeo = new THREE.PlaneGeometry(30, 30);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x4a7c59, roughness: 0.9 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -0.6;
-        ground.receiveShadow = true;
-        scene.add(ground);
-
-        scene.add(hanokGroup);
-
-        // 카메라 위치 설정 (비스듬히 내려다보는 구도)
-        camera.position.set(7, 4, 8);
-        camera.lookAt(0, 1, 0);
-
-        // 천천히 회전 애니메이션
         function animate() {
             requestAnimationFrame(animate);
-            hanokGroup.rotation.y += 0.003;
+            controls.update();
             renderer.render(scene, camera);
         }
         animate();
