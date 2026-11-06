@@ -2,32 +2,69 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Wang Project - 3D 산사</title>
-    <style>body { margin: 0; }</style>
+    <title>Wang Project - 전통 기와집</title>
+    <style>body { margin: 0; background-color: #87CEEB; }</style>
 </head>
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
         const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xddeeff);
+        
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        const geometry = new THREE.BoxGeometry();
-        const material = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
-        const floor = new THREE.Mesh(geometry, material);
-        scene.add(floor);
+        // 조명 추가
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        directionalLight.position.set(10, 20, 15);
+        scene.add(directionalLight);
 
-        camera.position.z = 5;
+        // 건물 그룹
+        const templeGroup = new THREE.Group();
+
+        // 1. 마당 바닥
+        const floorGeo = new THREE.BoxGeometry(12, 0.2, 12);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x556B2F });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.position.y = -1;
+        templeGroup.add(floor);
+
+        // 2. 건물 본체 (갈색 목재)
+        const bodyGeo = new THREE.BoxGeometry(4, 2.2, 3);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.2;
+        templeGroup.add(body);
+
+        // 3. 기와 지붕 (어두운 색 사각뿔)
+        const roofGeo = new THREE.ConeGeometry(3.2, 1.5, 4);
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x2F4F4F });
+        const roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.position.y = 2.0;
+        roof.rotation.y = Math.PI / 4;
+        templeGroup.add(roof);
+
+        scene.add(templeGroup);
+
+        camera.position.set(4, 3, 6);
+        camera.lookAt(0, 0, 0);
 
         function animate() {
             requestAnimationFrame(animate);
-            floor.rotation.x += 0.01;
-            floor.rotation.y += 0.01;
+            templeGroup.rotation.y += 0.005;
             renderer.render(scene, camera);
         }
         animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
