@@ -3,9 +3,19 @@
 <head>
     <meta charset="utf-8">
     <title>Wang Project - 3D 전통 기와집</title>
-    <style>body { margin: 0; background-color: #cae5ff; overflow: hidden; }</style>
+    <style>
+        body { margin: 0; background-color: #cae5ff; overflow: hidden; }
+        #loading {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 22px; font-weight: bold; color: #333; font-family: sans-serif;
+            background: rgba(255,255,255,0.9); padding: 15px 30px; border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+    </style>
 </head>
 <body>
+    <div id="loading">3D 기와집 불러오는 중... (잠시만 기다려주세요)</div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -19,7 +29,6 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // 사방에서 밝게 비추는 빛 추가
         const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
         scene.add(ambientLight);
         const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
@@ -28,26 +37,33 @@
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-        // 3D 모델 불러오기 및 위치/크기 자동 맞춤
         const loader = new THREE.GLTFLoader();
         loader.load('island-glb.glb', function (gltf) {
             const hanok = gltf.scene;
             scene.add(hanok);
 
-            // 모델의 크기와 중앙 위치 계산
+            // 로딩이 끝나면 안내 문구 숨기기
+            document.getElementById('loading').style.display = 'none';
+
             const box = new THREE.Box3().setFromObject(hanok);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
-            
             const maxDim = Math.max(size.x, size.y, size.z);
             
-            // 카메라 시점을 모델 전체가 한눈에 보이도록 멀리 이동
             camera.position.set(center.x + maxDim * 1.5, center.y + maxDim * 0.8, center.z + maxDim * 1.5);
             controls.target.copy(center);
             controls.update();
 
-        }, undefined, function (error) {
+        }, function (xhr) {
+            // 다운로드 진행률 표시
+            if (xhr.lengthComputable) {
+                const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                document.getElementById('loading').innerText = `기와집 다운로드 중... (${percent}%)`;
+            }
+        }, function (error) {
             console.error('3D 모델 로딩 실패:', error);
+            document.getElementById('loading').innerText = '파일 로딩 실패! 파일 이름을 확인해주세요.';
+            document.getElementById('loading').style.color = 'red';
         });
 
         function animate() {
