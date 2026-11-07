@@ -14,30 +14,38 @@
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xcae5ff);
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // 조명 설정
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+        // 사방에서 밝게 비추는 빛 추가
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
         scene.add(ambientLight);
-        const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        sunLight.position.set(10, 20, 10);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+        sunLight.position.set(50, 100, 50);
         scene.add(sunLight);
 
-        // 마우스 컨트롤
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-        // 3D 모델 불러오기 (올리신 island-glb.glb 파일 연결)
+        // 3D 모델 불러오기 및 위치/크기 자동 맞춤
         const loader = new THREE.GLTFLoader();
         loader.load('island-glb.glb', function (gltf) {
             const hanok = gltf.scene;
             scene.add(hanok);
+
+            // 모델의 크기와 중앙 위치 계산
+            const box = new THREE.Box3().setFromObject(hanok);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
             
-            // 카메라 위치 잡기
-            camera.position.set(10, 5, 10);
+            const maxDim = Math.max(size.x, size.y, size.z);
+            
+            // 카메라 시점을 모델 전체가 한눈에 보이도록 멀리 이동
+            camera.position.set(center.x + maxDim * 1.5, center.y + maxDim * 0.8, center.z + maxDim * 1.5);
+            controls.target.copy(center);
             controls.update();
+
         }, undefined, function (error) {
             console.error('3D 모델 로딩 실패:', error);
         });
